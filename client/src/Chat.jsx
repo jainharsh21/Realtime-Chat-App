@@ -4,10 +4,11 @@ import {
   InMemoryCache,
   ApolloProvider,
   useQuery,
+  useMutation,
   gql,
 } from "@apollo/client";
 
-import { Container } from "shards-react";
+import { Container, Row, Col, FormInput, Button } from "shards-react";
 
 const client = new ApolloClient({
   uri: "http://localhost:4000/",
@@ -21,6 +22,12 @@ const GET_MESSAGES = gql`
       content
       user
     }
+  }
+`;
+
+const POST_MESSAGE = gql`
+  mutation($user: String!, $content: String!) {
+    postMessage(user: $user, content: $content)
   }
 `;
 
@@ -45,10 +52,10 @@ const Messages = ({ user }) => {
                 width: 50,
                 marginRight: "0.5rem",
                 border: "2px solid #e5e6ea",
-                borderRadius : 25,
-                textAlign : "center",
-                fontSize : "18pt",
-                paddingTop : 5
+                borderRadius: 25,
+                textAlign: "center",
+                fontSize: "18pt",
+                paddingTop: 5,
               }}
             >
               {messageUser.slice(0, 2).toUpperCase()}
@@ -72,9 +79,54 @@ const Messages = ({ user }) => {
 };
 
 const Chat = () => {
+  const [state, stateSet] = React.useState({
+    user: "John",
+    content: "",
+  });
+
+  const [postMessage] = useMutation(POST_MESSAGE);
+
+  const onSend = () => {
+    if (state.content.length > 0) {
+      postMessage({
+        variables: state,
+      });
+    }
+    stateSet({
+      ...state,
+      content: "",
+    });
+  };
+
   return (
     <Container>
-      <Messages user="Mary" />
+      <Messages user={state.user} />
+      <Row>
+        <Col xs={2} style={{ padding: 0 }}>
+          <FormInput
+            label="User"
+            value={state.user}
+            onChange={(evt) => stateSet({ ...state, user: evt.target.value })}
+          />
+        </Col>
+        <Col xs={8}>
+          <FormInput
+            label="Content"
+            value={state.content}
+            onChange={(evt) =>
+              stateSet({ ...state, content: evt.target.value })
+            }
+            onKeyUp={(evt) => {
+              if (evt.keyCode === 13) {
+                onSend();
+              }
+            }}
+          />
+        </Col>
+        <Col xs={2}>
+          <Button onClick={() => onSend()}>Send</Button>
+        </Col>
+      </Row>
     </Container>
   );
 };
